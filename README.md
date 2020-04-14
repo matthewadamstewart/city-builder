@@ -31,11 +31,17 @@ This is a class project which is for learning how to make a backend server for a
 * ACP 
 * made service.js
 
-
+### **Version**: 1.0.2 (04-14-2020, 1:00 PM PST)
+* ACP 
+* renamed service.js to server.js and moved to root directory from data directory
+* Corrected index.js to server.js in package
 <!-- Use this area to document the iterative changes made to your application as each feature is successfully implemented. Use time stamps. Here's an examples:
 
-01-01-2001 4:59pm - Application now has a fully-functional express server, with a GET route for the location resource.
+01-01-2001 4:59pm - Application now has a fully-functional express server, with a GET route for the location resource.-->
 
-## Credits and Collaborations
+## Credits and Collaborations (Alphabetical Order)
+* Jacob Knaack
+* Joe Pennock
+* Matthew Stewart
+
 <!-- Give credit (and a link) to other people or resources that helped you build this application. -->
--->

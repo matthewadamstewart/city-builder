@@ -6,3 +6,8 @@ const app = express();
 
 const PORT = process.env.PORT || 3000;
 
+// app.get('/location', (request, response)) => {
+  
+// }
+
+app.listen(PORT);
