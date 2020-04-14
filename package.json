@@ -1,0 +1,25 @@
+{
+  "name": "city-builder",
+  "version": "1.0.0",
+  "description": "This is a class project to learn how to make a server and interact with API",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/matthewadamstewart/city-builder.git"
+  },
+  "keywords": [
+    "lab"
+  ],
+  "author": "Matthew Stewart",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/matthewadamstewart/city-builder/issues"
+  },
+  "homepage": "https://github.com/matthewadamstewart/city-builder#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
