@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 const cors = require('cors');
 app.use(cors());
 
-app.get('/location', (request, response) => {
+function handleLocation(request, response) {
   try {
     let cityQuery = request.query.city;
 
@@ -25,15 +25,12 @@ app.get('/location', (request, response) => {
     response.status(500).send(err);
     console.error(err);
   }
-})
+}
+
+app.get('/location', handleLocation)
 
 
-app.get( '/weather', (request, response) => {
-  // let city = request.query.search_query;
-  // let formatted_query = request.query.formatted_query;
-  // let latitude = request.query.latitude;
-  // let longitude = request.query.longitude;
-
+function handleWeather(request, response) {
   let weatherData = require('./data/weather.json');
   let weatherArray = weatherData.daily.data;
 
@@ -41,7 +38,9 @@ app.get( '/weather', (request, response) => {
     return new Weather(day);
   })
   response.send(finalWeatherArray);
-});
+}
+
+app.get( '/weather', handleWeather);
 
 
 function Location (obj, city) {
