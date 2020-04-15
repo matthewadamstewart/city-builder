@@ -1,6 +1,6 @@
 {
   "name": "city-builder",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "This is a class project to learn how to make a server and interact with API",
   "main": "server.js",
   "scripts": {
