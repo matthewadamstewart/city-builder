@@ -1,51 +1,65 @@
 'use strict';
 
 const express = require('express');
-const cors = require('cors');
+
 const app = express();
+
+require('dotenv').config();
 
 const PORT = process.env.PORT || 3000;
 
-function Location (city, data) {
-  this.search_query = city;
-  this.formated_query = data.display_name;
-  this.lattitude =data.lat;
-  this.longitude = data.lon;
-}
-
-function Weather(date, forecast) {
-  this.forecast = forecast;
-  this.time = new Date(date).toDateString;
-}
-
-
-function handleWeather(request, response) {
-  const weatherData =require('./data/weather.json');
-  const weatherArray = [];
-  
-  weatherData.forEach(object => {
-    let newForcast = new Weather(object.datetime, object.weather.description);
-    weatherArray.push(newForecast);
-  });
-  response.send(weatherArray);
-}
-
-function handleLocation(request, response) {
-  const cityQuery = request.query.city;
-
-  const locationData = require('./data/location.json');
-  location = new Location(cityQuery, locationData[0])
-
-  console.log(cityQuery, locationData);
-  const latitude = locationData[0].lat;
-  const logitude  = locationData[0].lon;
-  response.send(location);
-}
-
-
+const cors = require('cors');
 app.use(cors());
-app.get('/location', handleLocation);
-app.get('/weather', handleWeather);
 
-app.listen(PORT, () => {console.log('Application is running on PORT:' + PORT);
+app.get('/location', (request, response) => {
+  try {
+    let cityQuery = request.query.city;
+
+    let locationData = require('./data/location.json');
+
+    let location = new Location(locationData[0], cityQuery);
+
+    response.send(location);
+  }
+  catch(err){
+    response.status(500).send(err);
+    console.error(err);
+  }
+})
+
+
+app.get( '/weather', (request, response) => {
+  // let city = request.query.search_query;
+  // let formatted_query = request.query.formatted_query;
+  // let latitude = request.query.latitude;
+  // let longitude = request.query.longitude;
+
+  let weatherData = require('./data/weather.json');
+  let weatherArray = weatherData.daily.data;
+
+  const finalWeatherArray = weatherArray.map(day => {
+    return new Weather(day);
+  })
+  response.send(finalWeatherArray);
+});
+
+
+function Location (obj, city) {
+  this.search_query = city;
+  this.formated_query = obj.display_name;
+  this.lattitude = obj.lat;
+  this.longitude = obj.lon;
+}
+
+function Weather(obj) {
+  this.time = new Date(obj.time * 1000).toDateString();
+  this.forecast = obj.summary;
+}
+
+
+app.get('*', (request, response) => {
+  response.status(404).send('sorry something is wrong');
+});
+
+app.listen(PORT, () => {console.log('Application is running on PORT: ' + PORT);
 });
