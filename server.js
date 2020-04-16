@@ -1,10 +1,14 @@
 'use strict';
 
+require('dotenv').config();
 const express = require('express');
 const superagent = require('superagent');
 const app = express();
 
-require('dotenv').config();
+const pg = require('pg');
+const DATABASE_URL = process.env.DATABASE_URL;
+const client = new pg.Client(DATABASE_URL);
+
 
 const PORT = process.env.PORT || 3000;
 
@@ -22,20 +26,18 @@ function declaredLocationResponse(locationResponse, response, cityQuery) {
 }
 
 function handleLocation(request, response) {
-  try {
-    let cityQuery = request.query.city;
-    const key = process.env.GEOCODE_API_KEY;
-    const url = `https://us1.locationiq.com/v1/search.php?key=${key}&q=${cityQuery}&format=json&limit=1`;
 
-    superagent.get(url).then(locationResponse => {declaredLocationResponse(locationResponse, response, cityQuery)});
-  }
-  catch(err){
+  let cityQuery = request.query.city;
+  const key = process.env.GEOCODE_API_KEY;
+  const url = `https://us1.locationiq.com/v1/search.php?key=${key}&q=${cityQuery}&format=json&limit=1`;
+
+  superagent.get(url).then(locationResponse => {declaredLocationResponse(locationResponse, response, cityQuery)}).catch( (err) => {
     response.status(500).send(err);
     console.error(err);
-  }
+  });
 }
 
-//invokes the handleLocation in when '/location' 
+//invokes the handleLocation in when '/location' is called from the frontend
 app.get('/location', handleLocation);
 
 //this grabs the weatherResponse as an object from which we can extract the nested data using . syntax notation and passes response through as aparameter from the function calling it back
@@ -51,6 +53,8 @@ function declaredWeatherResponse(weatherResponse, response) {
 
 function handleWeather(request, response) {
   const key = process.env.WEATHER_API_KEY;
+  const latitude = request.query.latitude;
+  const longitude = request.query.longitude;
   const url = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${latitude}&lon=${longitude}&key=${key}`;
 
   superagent.get(url)
@@ -61,7 +65,31 @@ function handleWeather(request, response) {
     });
 }
 
-app.get( '/weather', handleWeather);
+function declaredMovieResponse(movieResponse, response) {
+  const movieDataObject = movieResponse;
+  response.send(movieDataObject);
+}
+
+app.get( '/weather', handleMovie);
+
+function handleMovie(request, response) {
+  const key = process.env.MOVIE_API_KEY;
+  const $latitude = request.query.latitude;
+  const $longitude = request.query.longitude;
+  let insertSQL = `INSERT INTO table (latitude, longitide) VALUES ($1, $2)`;
+  let insertValues = [$latitude, $longitude];
+  
+  const url = `https://api.themoviedb.org/3/movie/550?api_key=${key}`;
+ 
+  superagent.get(url)
+    .then(movieResponse => {declaredMovieResponse(movieResponse, response)
+    }).catch( (err) => {
+      response.status(500).send(err);
+      console.error(err);
+    });
+}
+
+app.get( '/movies', handleMovie);
 
 
 function Location (city, obj) {
