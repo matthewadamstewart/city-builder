@@ -58,8 +58,9 @@ function declaredLocationResponse(locationResponse, response, cityQuery) {
   response.send(location);
   console.log(data);
   let insertSQL = `INSERT INTO locations (search_query, display_name, latitude, longitude) VALUES ($1, $2, $3, $4);`;
-  let insertValues = [cityQuery, data.display_name , data.lat, data.lon];
-  dbClient.query(insertSQL, insertValue);
+  let insertValues = [cityQuery, data.format_query , data.latitude, data.longitude];
+  dbClient.query(insertSQL, insertValues);
+  response.status(200).send(location)
 }
 
 function handleLocation(request, response) {
@@ -71,27 +72,24 @@ function handleLocation(request, response) {
   let searchSQL = `SELECT * FROM locations WHERE search_query=$1;`;
   let searchValue = [cityQuery];
 
-  dbClient.query(searchSQL, searchValue).
-    then(sqlResults => {
-      console.log(sqlResults.rows);
-    }).catch( (sqlError) => {
-    errorHandler(sqlError, request, response);
+  dbClient.query(searchSQL, searchValue)
+    .then(sqlResults => {
+      if (sqlResults.rows[0]) {
+        response.status(200).send(new Location(cityQuery, sqlResults.rows[0]))
+      } else {
+        superagent.get(url)
+          .then(locationResponse => {
+            declaredLocationResponse(locationResponse, response, cityQuery);
+          })
+          .catch(error => { errorHandler(error, request, response, next) });
+      }
     })
-
-  if (sqlResults.rows[0]) {
-    response.send(sqlResults.rows[0]);
-  } else {
-    superagent.get(url).then(locationResponse => {declaredLocationResponse(locationResponse, response, cityQuery)}).catch( error => {
-      errorHandler(error, request,response);
-      console.log(error);
-    });
-}
+    .catch(error => { errorHandler(error, request, response) });
 }
 
-//invokes the handleLocation in when '/location' is called from the frontend
+
 app.get('/location', handleLocation);
 
-//this grabs the weatherResponse as an object from which we can extract the nested data using . syntax notation and passes response through as aparameter from the function calling it back
 function declaredWeatherResponse(weatherResponse, response) {
   const data = weatherResponse.body.data;
   const newWeatherArray = [];
@@ -109,18 +107,18 @@ function handleWeather(request, response) {
 
   superagent.get(url)
     .then(weatherResponse => {declaredWeatherResponse(weatherResponse, response)
-    }).catch( (err) => {
-      errorHandler(err);
-    });
+    }).catch( error => { errorHandler(error, request, response) });
 }
 
 
 app.get('/weather', handleWeather);
 
-function declaredTrailResponse(trailResponse, response) {
-  const data = trailResponse
-
-  response.send(data);
+function declaredTrailResponse(trailsResponse, response) {
+  const extractedTrails = trailsResponse.body.trails;
+  let localTrailArrayResult = extractedTrails.map(item => {
+    return new Trail(item);
+  });
+  response.status(200).send(localTrailArrayResult);
 }
 
 function handleTrail(request, response) {
@@ -128,42 +126,42 @@ function handleTrail(request, response) {
   const latitude = request.query.latitude;
   const longitude = request.query.longitude;
   const url = `https://www.hikingproject.com/data/get-trails?lat=${latitude}&lon=-${longitude}&maxDistance=10&key=${key}`;
-  
+
   superagent.get(url)
     .then(trailsResponse => {
-      const extractedTrails = trailsResponse.body.trails;
-      let localTrailArrayResult = extractedTrails.map(item => {
-        return new Trail(item);
-      });
-      response.status(200).send(localTrailArrayResult);
+      declaredTrailResponse(trailsResponse, response);
     })
-    .catch(error => {
-      handleError('something went wrong: ' + error, request, response)
-    });
+    .catch( error => { errorHandler(error, request, response) });
 }
 
 app.get( '/trails', handleTrail);
 
-function handleMovie(request, response) {
-  const key = process.env.MOVIES_API_KEY;
-  const latitude = request.query.latitude;
-  const longitude = request.query.longitude;
+// function declaredMovieResponse(movieResponse, response) {
 
-  const url = `https://api.themoviedb.org/3/movie/550?api_key=${key}`;
- 
- 
-  superagent.get(url)
-    .then(movieResponse => {declaredMovieResponse(movieResponse, response)
-    }).catch( (err) => {
-      response.status(500).send(err);
-      console.error(err);
-    });
+// }
+
+// function handleMovie(request, response) {
+//   const key = process.env.MOVIES_API_KEY;
+//   const latitude = request.query.latitude;
+//   const longitude = request.query.longitude;
+
+//   const url = `https://api.themoviedb.org/3/movie/550?api_key=${key}`;
+
+//   superagent.get(url)
+//     .then(movieResponse => {declaredMovieResponse(movieResponse, response)
+//     }).catch( error => { errorHandler(error, request, response) });
+// }
+
+// app.get( '/movies', handleMovie);
+
+function declaredYelpResponse(yelpResponse, response) {
+  console.log(yelpResponse.body.businesses);
+  const results = yelpResponse.body.businesses.map(item => new Business(item));
+  response.send(results);
 }
 
-app.get( '/movies', handleMovie);
 
 function handleYelp(request, response) {
-
   const cityQuery = request.query.city;
   let url = `http://api.yelp.com/v3/businesses/search?location=${cityQuery}&term=restaurants`;
   superagent.get(url)
@@ -171,20 +169,18 @@ function handleYelp(request, response) {
       "Authorization": `Bearer ${process.env.YELP_API_KEY}`
     })
     .then(yelpResponse => {
-      console.log(yelpResponse.body.businesses);
-      const results = yelpResponse.body.businesses.map(item => new Business(item));
-      response.send(results);
+      declaredYelpResponse(yelpResponse, response);
     })
     .catch((error) => {
       response.send('Something is wrong: ' + error);
     });
 }
 
+app.get( '/yelp', handleYelp);
 
 app.get('*', (request, response) => {
   response.status(404).send('sorry something is wrong');
 });
-
 
 dbClient.connect(error => {
   if (error) {
