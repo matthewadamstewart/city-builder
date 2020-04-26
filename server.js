@@ -72,7 +72,7 @@ function errorHandler(error, request, response) {
 function declaredLocationResponse(locationResponse, response, cityQuery) {
   const data = locationResponse.body[0];
   const location = new Location(cityQuery, data);
-  let insertSQL = `INSERT INTO locations (search_query, display_name, latitude, longitude) VALUES ($1, $2, $3, $4);`;
+  let insertSQL = `INSERT INTO locations (search_query, formatted_query, latitude, longitude) VALUES ($1, $2, $3, $4) RETURNING *;`;
   let insertValues = [cityQuery, location.format_query , location.latitude, location.longitude];
   dbClient.query(insertSQL, insertValues);
   response.status(200).send(location);
